@@ -1,21 +1,22 @@
 import shlex
-import logging
 import aiohttp
-import subprocess
-
-logger = logging.getLogger(__name__)
+import asyncio
 
 
 async def parse(url, selector):
-
     async with aiohttp.ClientSession() as session:
-        async with session.get(url) as result:
+        async with session.get(url) as response:
+            html = await response.read()
+            return await pup(html, selector)
 
-            html = await result.read()
 
-            cmd = shlex.split("pup %s json\{\}" % selector)
-            logger.info("CMD: %s" % cmd)
+async def pup(html, args):
+    cmd = shlex.split("pup %s json\{\}" % args)
 
-            stdout = subprocess.check_output(cmd, input=html)
+    process = await asyncio.create_subprocess_exec(
+        *cmd, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
+    )
 
-            return stdout.decode('utf-8')
+    stdout, stderr = await process.communicate(input=html)
+
+    return stdout.decode('utf-8')

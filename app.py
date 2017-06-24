@@ -1,22 +1,27 @@
 from sanic import Sanic
+from sanic.log import log
 from sanic.response import json, text
+from sanic_cors import CORS
 
 import dom
 
 app = Sanic()
+CORS(app)
 
 
 @app.route("/")
 async def help(request):
-    return text("Use /parse?url=<URL>&select=<CSS selector>")
+    return text("Use /parse?url=<URL>&selector=<CSS selector>")
 
 
 @app.route("/parse")
 async def parse(request):
-    url = request.args.get('url')
-    select = request.args.get('select')
+    log.info(request.args)
 
-    result = await dom.parse(url, select)
+    url = request.args.get('url')
+    selector = request.args.get('selector')
+
+    result = await dom.parse(url, selector)
 
     return text(result, headers={
         "content-type": "application/json"
